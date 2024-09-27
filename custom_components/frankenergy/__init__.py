@@ -1,4 +1,4 @@
-"""Support for Meridian Energy sensors."""
+"""Support for Frank Energy sensors."""
 
 import logging
 
