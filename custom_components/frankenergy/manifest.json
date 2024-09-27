@@ -2,15 +2,15 @@
 	"domain": "frankenergy",
 	"name": "Frank Energy",
 	"codeowners": [
-		"@brunsy"
+		"@aidancopps"
 	],
 	"config_flow": true,
 	"dependencies": [
 		"recorder"
 	],
-	"documentation": "https://github.com/brunsy/ha-frankenergy",
+	"documentation": "https://github.com/aidancopps/ha-frankenergy",
 	"iot_class": "cloud_polling",
-	"issue_tracker": "https://github.com/brunsy/ha-frankenergy/issues",
+	"issue_tracker": "https://github.com/aidancopps/ha-frankenergy/issues",
 	"requirements": [],
 	"version": "0.0.1"
 }
