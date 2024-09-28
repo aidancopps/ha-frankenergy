@@ -21,6 +21,7 @@ _LOGGER = logging.getLogger(__name__)
 
 SCAN_INTERVAL = timedelta(hours=1)
 
+
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback, discovery_info=None
 ):
@@ -32,6 +33,7 @@ async def async_setup_entry(
 
     api = hass.data[DOMAIN]["api"]
     async_add_entities([FrankEnergyUsageSensor(SENSOR_NAME, api)], True)
+
 
 class FrankEnergyUsageSensor(SensorEntity):
     """Define Frank Energy Usage sensor."""
@@ -49,10 +51,10 @@ class FrankEnergyUsageSensor(SensorEntity):
         self._state_attributes = {}
         self._api = api
         self._icon = "mdi:meter-electric"
-        self._consumption_sensor_id =  f"{DOMAIN}:energy_consumption_daily"
-        self._consumption_sensor_name =  f"{DOMAIN} energy_consumption_daily"
-        self._cost_sensor_id =  f"{DOMAIN}:energy_cost_daily"
-        self._cost_sensor_name =  f"{DOMAIN} energy_cost_daily"
+        self._consumption_sensor_id = f"{DOMAIN}:energy_consumption_daily"
+        self._consumption_sensor_name = f"{DOMAIN} energy_consumption_daily"
+        self._cost_sensor_id = f"{DOMAIN}:energy_cost_daily"
+        self._cost_sensor_name = f"{DOMAIN} energy_cost_daily"
 
     @property
     def name(self):
@@ -104,92 +106,103 @@ class FrankEnergyUsageSensor(SensorEntity):
         _LOGGER.debug("Beginning sensor update")
         response = await self._api.get_data()
         if not response:
-          _LOGGER.warning("No sensor data available, skipping processing")
-          return
+            _LOGGER.warning("No sensor data available, skipping processing")
+            return
         await self.process_data(response)
 
     async def process_data(self, data):
-      """Process the hourly energy data."""
-      usageData = data.get('usage', [])
-      if not usageData:
-        _LOGGER.warning("No usage data available, skipping processing")
-        return
+        """Process the hourly energy data."""
+        usageData = data.get('usage', [])
+        if not usageData:
+            _LOGGER.warning("No usage data available, skipping processing")
+            return
 
-      _LOGGER.debug(f"usage data: {usageData}")
-      running_sum_kw = 0
-      running_sum_costNZD = 0
+        _LOGGER.debug(f"usage data: {usageData}")
+        running_sum_kw = 0
+        running_sum_costNZD = 0
 
-      cost_statistics = []
-      kw_statistics = []
-      first_start_date = datetime.fromisoformat(usageData[0]['startDate']).astimezone(pytz.utc)
+        cost_statistics = []
+        kw_statistics = []
+        first_start_date = datetime.fromisoformat(
+            usageData[0]['startDate']).astimezone(pytz.utc)
 
-      # Since last_reset doesn't seem to work, fetch the previous sum total to continue from
-      previous_consumption_sensor_data = await get_instance(self.hass).async_add_executor_job(
-          get_last_statistics, self.hass, 200, self._consumption_sensor_id, True, {"sum"}
-      )
-      previous_consumption_stats = previous_consumption_sensor_data.get(self._consumption_sensor_id, [])
+        # Since last_reset doesn't seem to work, fetch the previous sum total to continue from
+        previous_consumption_sensor_data = await get_instance(self.hass).async_add_executor_job(
+            get_last_statistics, self.hass, 200, self._consumption_sensor_id, True, {
+                "sum"}
+        )
+        previous_consumption_stats = previous_consumption_sensor_data.get(
+            self._consumption_sensor_id, [])
 
-      previous_cost_stats_sensor_data = await get_instance(self.hass).async_add_executor_job(
-          get_last_statistics, self.hass, 200, self._cost_sensor_id, True, {"sum"}
-      )
-      previous_cost_stats =previous_cost_stats_sensor_data.get(self._cost_sensor_id, [])
+        previous_cost_stats_sensor_data = await get_instance(self.hass).async_add_executor_job(
+            get_last_statistics, self.hass, 200, self._cost_sensor_id, True, {
+                "sum"}
+        )
+        previous_cost_stats = previous_cost_stats_sensor_data.get(
+            self._cost_sensor_id, [])
 
-      for stat in previous_consumption_stats:
-        statStartDate = datetime.fromtimestamp(stat['start']).astimezone(pytz.utc)
-        if statStartDate < first_start_date and stat["sum"] is not None:
-            running_sum_kw = stat["sum"]
-            break
-      for stat in previous_cost_stats:
-        statStartDate = datetime.fromtimestamp(stat['start']).astimezone(pytz.utc)
-        if statStartDate < first_start_date and stat["sum"] is not None:
-            running_sum_costNZD = stat["sum"]
-            break
+        for stat in previous_consumption_stats:
+            statStartDate = datetime.fromtimestamp(
+                stat['start']).astimezone(pytz.utc)
+            if statStartDate < first_start_date and stat["sum"] is not None:
+                running_sum_kw = stat["sum"]
+                break
+        for stat in previous_cost_stats:
+            statStartDate = datetime.fromtimestamp(
+                stat['start']).astimezone(pytz.utc)
+            if statStartDate < first_start_date and stat["sum"] is not None:
+                running_sum_costNZD = stat["sum"]
+                break
 
-      _LOGGER.debug(f"previous running sum for consumption: {running_sum_kw}")
-      _LOGGER.debug(f"previous running sum for cost: {running_sum_costNZD}")
+        _LOGGER.debug(f"previous running sum for consumption: {
+                      running_sum_kw}")
+        _LOGGER.debug(f"previous running sum for cost: {running_sum_costNZD}")
 
-      for entry in usageData:
-          running_sum_kw += entry['kw']
-          running_sum_costNZD += entry['costNZD']
+        for entry in usageData:
+            running_sum_kw += entry['kw']
+            running_sum_costNZD += entry['costNZD']
 
-          cost_statistics.append(StatisticData({
-              "start": datetime.strptime(entry['startDate'], "%Y-%m-%dT%H:%M:%S%z"),
-              "state": entry['costNZD'],
-              "sum": round(running_sum_costNZD, 2),
-          }))
+            cost_statistics.append(StatisticData({
+                "start": datetime.strptime(entry['startDate'], "%Y-%m-%dT%H:%M:%S%z"),
+                "state": entry['costNZD'],
+                "sum": round(running_sum_costNZD, 2),
+            }))
 
-          kw_statistics.append(StatisticData({
-              "start": datetime.strptime(entry['startDate'], "%Y-%m-%dT%H:%M:%S%z"),
-              "state": entry['kw'],
-              "sum": round(running_sum_kw, 2)
-          }))
+            kw_statistics.append(StatisticData({
+                "start": datetime.strptime(entry['startDate'], "%Y-%m-%dT%H:%M:%S%z"),
+                "state": entry['kw'],
+                "sum": round(running_sum_kw, 2)
+            }))
 
-      if kw_statistics:
-          kw_metadata = StatisticMetaData(
-              has_mean= False,
-              has_sum= True,
-              name= self._consumption_sensor_name,
-              source= DOMAIN,
-              statistic_id= self._consumption_sensor_id,
-              unit_of_measurement= self._unit_of_measurement,
-          )
-          _LOGGER.debug(f"kw statistics: {kw_statistics}")
-          async_add_external_statistics(self.hass, kw_metadata, kw_statistics)
-      else:
-          _LOGGER.warning("No daily energy consumption statistics found, skipping update")
+        if kw_statistics:
+            kw_metadata = StatisticMetaData(
+                has_mean=False,
+                has_sum=True,
+                name=self._consumption_sensor_name,
+                source=DOMAIN,
+                statistic_id=self._consumption_sensor_id,
+                unit_of_measurement=self._unit_of_measurement,
+            )
+            _LOGGER.debug(f"kw statistics: {kw_statistics}")
+            async_add_external_statistics(
+                self.hass, kw_metadata, kw_statistics)
+        else:
+            _LOGGER.warning(
+                "No daily energy consumption statistics found, skipping update")
 
-      if kw_statistics:
-          cost_metadata = StatisticMetaData(
-              has_mean= False,
-              has_sum= True,
-              name= self._cost_sensor_name,
-              source= DOMAIN,
-              statistic_id= self._cost_sensor_id,
-              unit_of_measurement= self._unit_of_measurement,
-          )
+        if cost_statistics:
+            cost_metadata = StatisticMetaData(
+                has_mean=False,
+                has_sum=True,
+                name=self._cost_sensor_name,
+                source=DOMAIN,
+                statistic_id=self._cost_sensor_id,
+                unit_of_measurement=self._unit_of_measurement,
+            )
 
-          _LOGGER.debug(f"Cost statistics: {cost_statistics}")
-          async_add_external_statistics(self.hass, cost_metadata, cost_statistics)
-      else:
-          _LOGGER.warning("No daily energy cost statistics found, skipping update")
-
+            _LOGGER.debug(f"Cost statistics: {cost_statistics}")
+            async_add_external_statistics(
+                self.hass, cost_metadata, cost_statistics)
+        else:
+            _LOGGER.warning(
+                "No daily energy cost statistics found, skipping update")
