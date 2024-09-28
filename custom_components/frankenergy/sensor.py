@@ -52,9 +52,9 @@ class FrankEnergyUsageSensor(SensorEntity):
         self._api = api
         self._icon = "mdi:meter-electric"
         self._consumption_sensor_id = f"{DOMAIN}:energy_consumption_daily"
-        self._consumption_sensor_name = f"{DOMAIN} energy_consumption_daily"
+        self._consumption_sensor_name = "Daily energy consumption"
         self._cost_sensor_id = f"{DOMAIN}:energy_cost_daily"
-        self._cost_sensor_name = f"{DOMAIN} energy_cost_daily"
+        self._cost_sensor_name = "Daily energy cost"
 
     @property
     def name(self):
