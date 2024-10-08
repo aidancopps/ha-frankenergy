@@ -7,11 +7,12 @@ from typing import Any
 from collections.abc import Mapping
 import json
 from urllib.parse import parse_qs
+from datetime import datetime, timedelta
 
 _LOGGER = logging.getLogger(__name__)
 
 logging.basicConfig()
-# logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.DEBUG)
 requests_log = logging.getLogger("requests.packages.urllib3")
 requests_log.setLevel(logging.DEBUG)
 requests_log.propagate = True
@@ -22,7 +23,7 @@ class FrankEnergyApi:
 
     def __init__(self, email, password):
         """Initialise the API."""
-        _LOGGER.debug("__init__", exc_info=True)
+        _LOGGER.debug("__init__")
         self._client_id = "9b63be56-54d0-4706-bfb5-69707d4f4f89"
         self._redirect_uri = 'eol://oauth/redirect',
         self._url_token_base = "https://energyonlineb2cprod.b2clogin.com/energyonlineb2cprod.onmicrosoft.com"
@@ -50,7 +51,7 @@ class FrankEnergyApi:
 
     async def get_refresh_token(self):
         """Get the refresh token."""
-        _LOGGER.debug("API get_refresh_token", exc_info=True)
+        _LOGGER.debug("API get_refresh_token")
 
         async with aiohttp.ClientSession() as session:
             url = f"{self._url_token_base}/oauth2/v2.0/authorize"
@@ -64,7 +65,7 @@ class FrankEnergyApi:
                 'redirect_uri': 'eol://oauth/redirect',
             }
 
-            _LOGGER.debug("Step: 1", exc_info=True)
+            _LOGGER.debug("Step: 1")
             async with session.get(url, params=params) as response:
                 response_text = await response.text()
 
@@ -81,7 +82,7 @@ class FrankEnergyApi:
             headers = {
                 'X-CSRF-TOKEN': csrf,
             }
-            _LOGGER.debug("Step: 2", exc_info=True)
+            _LOGGER.debug("Step: 2")
             async with session.post(url, headers=headers, data=payload) as response:
                 response_text = await response.text()
                 pass
@@ -92,7 +93,7 @@ class FrankEnergyApi:
                 'tx': trans_id,
                 'p': self._p,
             }
-            _LOGGER.debug("Step: 3", exc_info=True)
+            _LOGGER.debug("Step: 3")
             async with session.get(url, params=params) as response:
                 response_text = await response.text()
                 # Extract the new CSRF token from cookies because it changes here
@@ -111,7 +112,7 @@ class FrankEnergyApi:
 
             url = f"{
                 self._url_token_base}/{self._p}/SelfAsserted?tx={trans_id}&p={self._p}"
-            _LOGGER.debug("Step: 4", exc_info=True)
+            _LOGGER.debug("Step: 4")
             async with session.post(url, headers=headers, data=payload) as response:
                 pass
 
@@ -124,7 +125,7 @@ class FrankEnergyApi:
                 'p': self._p
             }
             headers = {}
-            _LOGGER.debug("Step: 5", exc_info=True)
+            _LOGGER.debug("Step: 5")
             async with session.get(url, headers=headers, params=params, allow_redirects=False) as response:
                 response.raise_for_status()
                 response_data = await response.text()
@@ -160,10 +161,10 @@ class FrankEnergyApi:
 
             self._token = access_token
             self._refresh_token = refresh_token
-            self._refresh_token_expires_in = refresh_token_expires_in
-            self._access_token_expires_in = access_token_expires_in
+            self._refresh_token_expiry = datetime.now() + timedelta(seconds=refresh_token_expires_in)
+            self._access_token_expiry = datetime.now() + timedelta(seconds=access_token_expires_in)
             _LOGGER.debug(
-                "Refresh token retrieved successfully", exc_info=True)
+                "Refresh token retrieved successfully: %s", response)
 
     async def get_api_token(self):
         """Get token from the Frank Energy API."""
@@ -180,22 +181,22 @@ class FrankEnergyApi:
                 if response.status == 200:
                     jsonResult = await response.json()
                     self._token = jsonResult["access_token"]
-                    _LOGGER.debug(f"Auth Token: {self._token}", exc_info=True)
+                    _LOGGER.debug(f"Auth Token: {self._token}")
                 else:
                     _LOGGER.error(
-                        "Failed to retrieve the token page.", exc_info=True)
+                        "Failed to retrieve the token page.")
 
     async def get_data(self):
         """Get data from the API."""
 
-        access_token_threshold = timedelta(minutes=5).total_seconds()
-        if self._access_token_expires_in <= access_token_threshold:
-            _LOGGER.warning("Access token needs renewing", exc_info=True)
+        access_token_threshold = timedelta(minutes=10).total_seconds()
+        if (datetime.now() - self._access_token_expiry).total_seconds() <= access_token_threshold:
+            _LOGGER.warning("Access token needs renewing")
             await self.get_api_token()
 
-        refresh_token_threshold = timedelta(minutes=5).total_seconds()
-        if self._refresh_token_expires_in <= refresh_token_threshold:
-            _LOGGER.warning("Refresh token needs renewing", exc_info=True)
+        refresh_token_threshold = timedelta(minutes=120).total_seconds()
+        if (datetime.now() - self._refresh_token_expiry).total_seconds() <= refresh_token_threshold:
+            _LOGGER.warning("Refresh token needs renewing")
             await self.get_refresh_token()
 
         headers = {
@@ -225,9 +226,9 @@ class FrankEnergyApi:
                 # _LOGGER.debug(f"get_data returned data: {data}")
                 if not data:
                     _LOGGER.warning(
-                        "Fetched consumption successfully but there was no data", exc_info=True)
+                        "Fetched consumption successfully but there was no data")
                 return data
             else:
                 _LOGGER.error(
-                    "Could not fetch consumption. Response: %s", response, exc_info=True)
+                    "Could not fetch consumption. Response: %s", response)
                 return None
