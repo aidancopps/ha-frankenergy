@@ -177,10 +177,13 @@ class FrankEnergyApi:
 
         async with aiohttp.ClientSession() as session:
             url = f"{self._url_token_base}/{self._p}/oauth2/v2.0/token"
+            _LOGGER.debug("Renewing Access Token")
             async with session.post(url, data=token_data) as response:
                 if response.status == 200:
                     jsonResult = await response.json()
                     self._token = jsonResult["access_token"]
+                    access_token_expires_in = jsonResult.get('expires_in')
+                    self._access_token_expiry = datetime.now() + timedelta(seconds=access_token_expires_in)
                     _LOGGER.debug(f"Auth Token: {self._token}")
                 else:
                     _LOGGER.error(
