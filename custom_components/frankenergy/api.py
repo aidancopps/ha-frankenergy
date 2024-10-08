@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 _LOGGER = logging.getLogger(__name__)
 
 logging.basicConfig()
-logging.getLogger().setLevel(logging.DEBUG)
+# logging.getLogger().setLevel(logging.DEBUG)
 requests_log = logging.getLogger("requests.packages.urllib3")
 requests_log.setLevel(logging.DEBUG)
 requests_log.propagate = True
@@ -36,8 +36,8 @@ class FrankEnergyApi:
         self._accountNumber = None
         self._token = None
         self._refresh_token = None
-        self._refresh_token_expires_in = 0
-        self._access_token_expires_in = 0
+        self._refresh_token_expiry = None
+        self._refresh_token_expiry = None
 
     def get_setting_json(self, page: str) -> Mapping[str, Any] | None:
         """Get the settings from json result."""
@@ -164,7 +164,7 @@ class FrankEnergyApi:
             self._refresh_token_expiry = datetime.now() + timedelta(seconds=refresh_token_expires_in)
             self._access_token_expiry = datetime.now() + timedelta(seconds=access_token_expires_in)
             _LOGGER.debug(
-                "Refresh token retrieved successfully: %s", response)
+                "Refresh token retrieved successfully: %s", response_data)
 
     async def get_api_token(self):
         """Get token from the Frank Energy API."""
@@ -176,7 +176,7 @@ class FrankEnergyApi:
         }
 
         async with aiohttp.ClientSession() as session:
-            url = f"{self._url_token_base}/oauth2/v2.0/token"
+            url = f"{self._url_token_base}/{self._p}/oauth2/v2.0/token"
             async with session.post(url, data=token_data) as response:
                 if response.status == 200:
                     jsonResult = await response.json()
@@ -184,19 +184,21 @@ class FrankEnergyApi:
                     _LOGGER.debug(f"Auth Token: {self._token}")
                 else:
                     _LOGGER.error(
-                        "Failed to retrieve the token page.")
+                        "Failed to retrieve the token page. Response: %s", response)
 
     async def get_data(self):
         """Get data from the API."""
-
-        access_token_threshold = timedelta(minutes=10).total_seconds()
-        if (datetime.now() - self._access_token_expiry).total_seconds() <= access_token_threshold:
-            _LOGGER.warning("Access token needs renewing")
+        
+        # Renew access_token if remaining time is 10 minutes or less
+        access_token_remaining_time = (self._access_token_expiry - datetime.now()).total_seconds()
+        if access_token_remaining_time <= 600:
+            _LOGGER.warning("Access token needs renewing. Remaining time: %d", access_token_remaining_time)
             await self.get_api_token()
-
-        refresh_token_threshold = timedelta(minutes=120).total_seconds()
-        if (datetime.now() - self._refresh_token_expiry).total_seconds() <= refresh_token_threshold:
-            _LOGGER.warning("Refresh token needs renewing")
+        
+        # Renew refresh_token if remaining time is 2 hours or less
+        refresh_token_remaining_time = (self._refresh_token_expiry - datetime.now()).total_seconds()
+        if refresh_token_remaining_time <= 7200: 
+            _LOGGER.warning("Refresh token needs renewing. Remaining time: %d", refresh_token_remaining_time)
             await self.get_refresh_token()
 
         headers = {
