@@ -195,13 +195,13 @@ class FrankEnergyApi:
         # Renew access_token if remaining time is 10 minutes or less
         access_token_remaining_time = (self._access_token_expiry - datetime.now()).total_seconds()
         if access_token_remaining_time <= 600:
-            _LOGGER.warning("Access token needs renewing. Remaining time: %d", access_token_remaining_time)
+            _LOGGER.debug("Access token needs renewing. Remaining time: %d", access_token_remaining_time)
             await self.get_api_token()
         
         # Renew refresh_token if remaining time is 2 hours or less
         refresh_token_remaining_time = (self._refresh_token_expiry - datetime.now()).total_seconds()
         if refresh_token_remaining_time <= 7200: 
-            _LOGGER.warning("Refresh token needs renewing. Remaining time: %d", refresh_token_remaining_time)
+            _LOGGER.debug("Refresh token needs renewing. Remaining time: %d", refresh_token_remaining_time)
             await self.get_refresh_token()
 
         headers = {
