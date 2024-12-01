@@ -25,7 +25,7 @@ class FrankEnergyApi:
         _LOGGER.debug("__init__", exc_info=True)
         self._client_id = "9b63be56-54d0-4706-bfb5-69707d4f4f89"
         self._redirect_uri = 'eol://oauth/redirect',
-        self._url_token_base = "https://energyonlineb2cprod.b2clogin.com/energyonlineb2cprod.onmicrosoft.com"
+        self._url_token_base = "https://auth.energyonline.co.nz/auth.energyonline.co.nz"
         self._url_data_base = "https://mobile-api.energyonline.co.nz"
         self._p = "B2C_1A_signin"
 
@@ -163,7 +163,7 @@ class FrankEnergyApi:
             self._refresh_token_expires_in = refresh_token_expires_in
             self._access_token_expires_in = access_token_expires_in
             _LOGGER.debug(
-                "Refresh token retrieved successfully", exc_info=True)
+                f"Refresh token retrieved successfully. Token: {response_data}", exc_info=True)
 
     async def get_api_token(self):
         """Get token from the Frank Energy API."""
@@ -175,7 +175,7 @@ class FrankEnergyApi:
         }
 
         async with aiohttp.ClientSession() as session:
-            url = f"{self._url_token_base}/oauth2/v2.0/token"
+            url = f"{self._url_token_base}/oauth2/v2.0/token?p={self._p}"
             async with session.post(url, data=token_data) as response:
                 if response.status == 200:
                     jsonResult = await response.json()
@@ -183,15 +183,16 @@ class FrankEnergyApi:
                     _LOGGER.debug(f"Auth Token: {self._token}", exc_info=True)
                 else:
                     _LOGGER.error(
-                        "Failed to retrieve the token page.", exc_info=True)
+                        f"Failed to retrieve the token page. Response: {response}", exc_info=True)
 
     async def get_data(self):
         """Get data from the API."""
 
         access_token_threshold = timedelta(minutes=5).total_seconds()
         if self._access_token_expires_in <= access_token_threshold:
-            _LOGGER.warning("Access token needs renewing", exc_info=True)
-            await self.get_api_token()
+            _LOGGER.warning(f"Access token needs renewing. Expires in: {
+                    self._access_token_expires_in}", exc_info=True)
+        await self.get_api_token()
 
         refresh_token_threshold = timedelta(minutes=5).total_seconds()
         if self._refresh_token_expires_in <= refresh_token_threshold:
