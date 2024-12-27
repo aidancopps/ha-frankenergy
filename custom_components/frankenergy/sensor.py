@@ -197,7 +197,7 @@ class FrankEnergyUsageSensor(SensorEntity):
                 name=self._cost_sensor_name,
                 source=DOMAIN,
                 statistic_id=self._cost_sensor_id,
-                unit_of_measurement=self._unit_of_measurement,
+                unit_of_measurement="$",
             )
 
             _LOGGER.debug(f"Cost statistics: {cost_statistics}")
