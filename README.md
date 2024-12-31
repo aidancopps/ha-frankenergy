@@ -20,7 +20,6 @@ The first field is the username and the next field is the password for your Fran
 Add "energy_consumption_daily" into Energy Dashboard for energy reporting.
 Then choose "Use an entity tracking the total costs" and select "frankenergy energy_cost_daily" to add the cost statistic.
 
-
 ### HACS (recommended)
 
 1. [Install HACS](https://hacs.xyz/docs/setup/download), if you did not already
