@@ -30,8 +30,6 @@ jobs:
         uses: python-semantic-release/python-semantic-release@v9.15.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          #git_committer_name: "github-actions"
-          #git_committer_email: "actions@users.noreply.github.com"
           commit: false
           tag: false
           push: false
@@ -42,20 +40,12 @@ jobs:
         run: |
           echo "Version: ${{steps.version_check.outputs.version}}"
           sed -i "s/\"version\": \".*\"/\"version\": \"${{steps.version_check.outputs.version}}\"/g" custom_components/frankenergy/manifest.json 
-        #  git config --local user.email "action@github.com"
-        #  git config --local user.name "GitHub Action"
-        #  git add -A
-        #  git commit -m "chore: bumping version to ${{steps.release.outputs.version}}"
-        #  git tag ${{ steps.release.outputs.tag }}
-        #  git push --set-upstream origin main
 
       - name: Action | Run Semantic Release
         id: release
         uses: python-semantic-release/python-semantic-release@v9.15.2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          #git_committer_name: "github-actions"
-          #git_committer_email: "actions@users.noreply.github.com"
           commit: true
           tag: true
           push: true
