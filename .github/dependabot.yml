@@ -6,15 +6,21 @@ updates:
       interval: "weekly"
     assignees:
       - "aidancopps"
+    commit-message:
+      prefix: "chore"
   - package-ecosystem: "devcontainers"
     directory: "/"
     schedule:
       interval: "weekly"
     assignees:
       - "aidancopps"
+    commit-message:
+      prefix: "chore"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     assignees:
       - "aidancopps"
+    commit-message:
+      prefix: "chore"
