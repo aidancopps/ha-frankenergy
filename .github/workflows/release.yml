@@ -11,40 +11,39 @@ jobs:
     name: "Release"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v4
-            
-      - name: Gets semantic release info
-        id: semantic_release_info
-        uses: fingerprintjs/action-semantic-release-info@v2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      - name: Setup | Checkout Repository at workflow sha
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
 
-      - name: Update Version and Commit   
-        if: ${{steps.semantic_release_info.outputs.no_release == 'false'}}
+      - name: Setup | Force correct release branch on workflow sha
         run: |
-          echo "Version: ${{steps.semantic_release_info.outputs.version}}"
-          sed -i "s/\"version\": \".*\"/\"version\": \"${{steps.semantic_release_info.outputs.version}}\"/g" custom_components/frankenergy/manifest.json 
+          git checkout -B ${{ github.ref_name }} ${{ github.sha }}
+            
+      - name: Action | Semantic Version Release
+        id: release
+        # Adjust tag with desired version if applicable.
+        uses: python-semantic-release/python-semantic-release@v9.15.2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          git_committer_name: "github-actions"
+          git_committer_email: "actions@users.noreply.github.com"
+
+      - name: Action | Update manifest.json and Commit   
+        if: steps.release.outputs.released == 'true'
+        run: |
+          echo "Version: ${{steps.release.outputs.version}}"
+          sed -i "s/\"version\": \".*\"/\"version\": \"${{steps.release.outputs.version}}\"/g" custom_components/frankenergy/manifest.json 
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add -A
-          git commit -m "chore: bumping version to ${{steps.semantic_release_info.outputs.version}}"
-          git tag ${{ steps.semantic_release_info.outputs.git_tag }}
+          git commit -m "chore: bumping version to ${{steps.release.outputs.version}}"
+          git tag ${{ steps.release.outputs.tag }}
 
-      - name: Push changes
-        if: ${{steps.semantic_release_info.outputs.no_release == 'false'}}
-        uses: ad-m/github-push-action@v0.8.0
+      - name: Publish | Upload to GitHub Release Assets
+        uses: python-semantic-release/publish-action@v9.15.2
+        if: steps.release.outputs.released == 'true'
         with:
-          github_token: ${{ github.token }}
-          tags: true
-
-      - name: Create GitHub Release
-        if: ${{steps.semantic_release_info.outputs.no_release == 'false'}}
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        with:
-          tag_name: ${{ steps.semantic_release_info.outputs.git_tag }}
-          release_name: ${{ steps.semantic_release_info.outputs.git_tag }}
-          body: ${{ steps.semantic_release_info.outputs.notes }}
-          draft: false
-          prerelease: false
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ steps.release.outputs.tag }}
