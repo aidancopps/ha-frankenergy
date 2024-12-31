@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v1.3.0 (2024-12-31)
+
+### Features
+
+- Add new release ([#6](https://github.com/aidancopps/ha-frankenergy/pull/6),
+  [`22940e0`](https://github.com/aidancopps/ha-frankenergy/commit/22940e0dafb184a6c866aeeac47c2c1905afa712))
+
+
 ## v1.2.0 (2024-12-31)
 
 ### Chores
