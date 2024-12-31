@@ -44,6 +44,7 @@ jobs:
           git add -A
           git commit -m "chore: bumping version to ${{steps.release.outputs.version}}"
           git tag ${{ steps.release.outputs.tag }}
+          git push --set-upstream origin main
 
       - name: Publish | Upload to GitHub Release Assets
         uses: python-semantic-release/publish-action@v9.15.2
