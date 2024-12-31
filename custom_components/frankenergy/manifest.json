@@ -1,16 +1,13 @@
 {
-	"domain": "frankenergy",
-	"name": "Frank Energy",
-	"codeowners": [
-		"@aidancopps"
-	],
-	"config_flow": true,
-	"dependencies": [
-		"recorder"
-	],
-	"documentation": "https://github.com/aidancopps/ha-frankenergy",
-	"iot_class": "cloud_polling",
-	"issue_tracker": "https://github.com/aidancopps/ha-frankenergy/issues",
-	"requirements": [],
-	"version": "1.1.0"
+  "domain": "frankenergy",
+  "name": "Frank Energy",
+  "codeowners": ["@aidancopps"],
+  "config_flow": true,
+  "dependencies": ["recorder"],
+  "documentation": "https://github.com/aidancopps/ha-frankenergy",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/aidancopps/ha-frankenergy/issues",
+  "requirements": [],
+  "version": "1.1.0"
 }
