@@ -40,6 +40,7 @@ jobs:
         run: |
           echo "Version: ${{steps.version_check.outputs.version}}"
           sed -i "s/\"version\": \".*\"/\"version\": \"${{steps.version_check.outputs.version}}\"/g" custom_components/frankenergy/manifest.json 
+          git add -A
 
       - name: Action | Run Semantic Release
         id: release
