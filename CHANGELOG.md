@@ -1,6 +1,57 @@
 # CHANGELOG
 
 
+## v1.5.0 (2025-01-07)
+
+### Chores
+
+- Bump homeassistant from 2024.12.5 to 2025.1.0
+  ([#7](https://github.com/aidancopps/ha-frankenergy/pull/7),
+  [`185fa85`](https://github.com/aidancopps/ha-frankenergy/commit/185fa85c8ece96219c87ae2112afda44932cebd5))
+
+Bumps [homeassistant](https://github.com/home-assistant/core) from 2024.12.5 to 2025.1.0. - [Release
+  notes](https://github.com/home-assistant/core/releases) -
+  [Commits](https://github.com/home-assistant/core/compare/2024.12.5...2025.1.0)
+
+--- updated-dependencies: - dependency-name: homeassistant dependency-type: direct:production
+
+update-type: version-update:semver-major
+
+...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+- Bump ruff from 0.8.4 to 0.8.6 ([#8](https://github.com/aidancopps/ha-frankenergy/pull/8),
+  [`447db26`](https://github.com/aidancopps/ha-frankenergy/commit/447db26e5828d5a69b1d9afd17971264dd6abe25))
+
+Bumps [ruff](https://github.com/astral-sh/ruff) from 0.8.4 to 0.8.6. - [Release
+  notes](https://github.com/astral-sh/ruff/releases) -
+  [Changelog](https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md) -
+  [Commits](https://github.com/astral-sh/ruff/compare/0.8.4...0.8.6)
+
+--- updated-dependencies: - dependency-name: ruff dependency-type: direct:production
+
+update-type: version-update:semver-patch
+
+...
+
+Signed-off-by: dependabot[bot] <support@github.com>
+
+Co-authored-by: dependabot[bot] <49699333+dependabot[bot]@users.noreply.github.com>
+
+### Documentation
+
+- Update readme
+  ([`1982d15`](https://github.com/aidancopps/ha-frankenergy/commit/1982d15dfcf6e44aed2981148635f519be7bede9))
+
+### Features
+
+- Hacs changes
+  ([`edea841`](https://github.com/aidancopps/ha-frankenergy/commit/edea8412ee5a650f9743d95e5d162eea29d53c02))
+
+
 ## v1.4.0 (2024-12-31)
 
 
