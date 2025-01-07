@@ -6,7 +6,7 @@ View your energy usage from Frank Energy (NZ) in Home Assistant.
 
 Imports the last four days of hourly energy data & costs from Frank Energy.
 
-![Energy Useage PNG](/homeassistant-energy-graph.png "Energy Dashboard Reporting")
+![Energy Usage PNG](/homeassistant-energy-graph.png "Energy Dashboard Reporting")
 
 ## Getting started
 
