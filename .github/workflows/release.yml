@@ -27,7 +27,7 @@ jobs:
             
       - name: Action | Get Semantic Version Number
         id: version_check
-        uses: python-semantic-release/python-semantic-release@v9.20.0
+        uses: python-semantic-release/python-semantic-release@v9.21.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           commit: false
@@ -44,7 +44,7 @@ jobs:
 
       - name: Action | Run Semantic Release
         id: release
-        uses: python-semantic-release/python-semantic-release@v9.20.0
+        uses: python-semantic-release/python-semantic-release@v9.21.0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           commit: true
