@@ -26,6 +26,8 @@ Copy all files in the *custom_components/frankenergy* folder to your Home Assist
 
 ## Known issues
 
+None
+
 ## Acknowledgements
 
 This integration is not supported / endorsed by, nor affiliated with, Frank Energy.
