@@ -95,6 +95,8 @@ class FrankEnergyApi:
             _LOGGER.debug("Step: 3", exc_info=True)
             async with session.get(url, params=params) as response:
                 response_text = await response.text()
+                _LOGGER.debug("Response Text: %s", response_text)
+                _LOGGER.debug("Response Cookies: %s", response.cookies)
                 # Extract the new CSRF token from cookies because it changes here
                 csrf_value = response.cookies.get('x-ms-cpim-csrf').value
                 csrf = csrf_value
@@ -191,7 +193,7 @@ class FrankEnergyApi:
         access_token_threshold = timedelta(minutes=5).total_seconds()
         if self._access_token_expires_in <= access_token_threshold:
             _LOGGER.warning(f"Access token needs renewing. Expires in: {
-                    self._access_token_expires_in}", exc_info=True)
+                self._access_token_expires_in}", exc_info=True)
         await self.get_api_token()
 
         refresh_token_threshold = timedelta(minutes=5).total_seconds()
