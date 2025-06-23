@@ -86,10 +86,10 @@ class FrankEnergyApi:
                 response_text = await response.text()
                 pass
 
-            url = f"{self._url_token_base}/{self._p}/api/SelfAsserted/confirmed"
+            url = f"{self._url_token_base}/{self._p}/api/SelfAsserted/confirmed?tx={trans_id}"
             params = {
                 'csrf_token': csrf,
-                'tx': trans_id,
+                #'tx': trans_id,
                 'p': self._p,
             }
             _LOGGER.debug("Step: 3", exc_info=True)
