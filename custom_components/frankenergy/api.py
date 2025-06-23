@@ -96,7 +96,7 @@ class FrankEnergyApi:
             async with session.get(url, params=params) as response:
                 response_text = await response.text()
                 _LOGGER.debug("Response Text: %s", response_text)
-                _LOGGER.debug("Response Cookies: %s", response.cookies)
+                _LOGGER.debug("Response: %s", response)
                 # Extract the new CSRF token from cookies because it changes here
                 csrf_value = response.cookies.get('x-ms-cpim-csrf').value
                 csrf = csrf_value
