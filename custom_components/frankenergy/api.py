@@ -24,7 +24,7 @@ class FrankEnergyApi:
         """Initialise the API."""
         _LOGGER.debug("__init__", exc_info=True)
         self._client_id = "9b63be56-54d0-4706-bfb5-69707d4f4f89"
-        self._redirect_uri = 'eol://oauth/redirect',
+        self._redirect_uri = 'eol://oauth/redirect'
         self._url_token_base = "https://auth.energyonline.co.nz/auth.energyonline.co.nz"
         self._url_data_base = "https://mobile-api.energyonline.co.nz"
         self._p = "B2C_1A_signin"
@@ -51,8 +51,8 @@ class FrankEnergyApi:
     async def get_refresh_token(self):
         """Get the refresh token."""
         _LOGGER.debug("API get_refresh_token", exc_info=True)
-
-        async with aiohttp.ClientSession() as session:
+        jar = aiohttp.CookieJar(quote_cookie=False)
+        async with aiohttp.ClientSession(cookie_jar=jar) as session:
             url = f"{self._url_token_base}/oauth2/v2.0/authorize"
             scope = f'openid offline_access {self._client_id}'
             params = {
@@ -61,7 +61,7 @@ class FrankEnergyApi:
                 'response_type': 'code',
                 'response_mode': 'query',
                 'scope': scope,
-                'redirect_uri': 'eol://oauth/redirect',
+                'redirect_uri': self._redirect_uri,
             }
 
             _LOGGER.debug("Step: 1", exc_info=True)
@@ -83,8 +83,7 @@ class FrankEnergyApi:
             }
             _LOGGER.debug("Step: 2", exc_info=True)
             async with session.post(url, headers=headers, data=payload) as response:
-                response_text = await response.text()
-                pass
+                await response.text()
 
             url = f"{self._url_token_base}/{self._p}/api/SelfAsserted/confirmed"
             params = {
@@ -95,9 +94,11 @@ class FrankEnergyApi:
             _LOGGER.debug("Step: 3", exc_info=True)
             async with session.get(url, params=params) as response:
                 response_text = await response.text()
-                # Extract the new CSRF token from cookies because it changes here
-                csrf_value = response.cookies.get('x-ms-cpim-csrf').value
-                csrf = csrf_value
+                csrf_cookie = response.cookies.get('x-ms-cpim-csrf')
+                if csrf_cookie is None:
+                    _LOGGER.error("CSRF cookie not found in step 3 response")
+                    raise RuntimeError("Missing CSRF cookie during login flow")
+                csrf = csrf_cookie.value
 
             payload = {
                 "request_type": "RESPONSE",
@@ -113,7 +114,7 @@ class FrankEnergyApi:
                 self._url_token_base}/{self._p}/SelfAsserted?tx={trans_id}&p={self._p}"
             _LOGGER.debug("Step: 4", exc_info=True)
             async with session.post(url, headers=headers, data=payload) as response:
-                pass
+                await response.text()
 
             url = f"{
                 self._url_token_base}/{self._p}/api/CombinedSigninAndSignup/confirmed"
@@ -174,7 +175,8 @@ class FrankEnergyApi:
             "refresh_token": self._refresh_token,
         }
 
-        async with aiohttp.ClientSession() as session:
+        jar = aiohttp.CookieJar(quote_cookie=False)
+        async with aiohttp.ClientSession(cookie_jar=jar) as session:
             url = f"{self._url_token_base}/oauth2/v2.0/token?p={self._p}"
             async with session.post(url, data=token_data) as response:
                 if response.status == 200:
@@ -200,7 +202,7 @@ class FrankEnergyApi:
             await self.get_refresh_token()
 
         headers = {
-            "authorization":  "Bearer " + self._token,
+            "authorization": "Bearer " + self._token,
             "brand-id": "GEOL",
             "platform": "Android",
             "mobile-build-number": "1"
@@ -219,16 +221,14 @@ class FrankEnergyApi:
             'endDate': to_date.strftime("%Y-%m-%d"),
         }
 
-        async with aiohttp.ClientSession() as session, \
-                session.get(url, headers=headers, params=params) as response:
-            if response.status == 200:
-                data = await response.json()
-                # _LOGGER.debug(f"get_data returned data: {data}")
-                if not data:
-                    _LOGGER.warning(
-                        "Fetched consumption successfully but there was no data", exc_info=True)
-                return data
-            else:
-                _LOGGER.error(
-                    "Could not fetch consumption. Response: %s", response, exc_info=True)
-                return None
+        jar = aiohttp.CookieJar(quote_cookie=False)
+        async with aiohttp.ClientSession(cookie_jar=jar) as session:
+            async with session.get(url, headers=headers, params=params) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if not data:
+                        _LOGGER.warning("Fetched consumption successfully but there was no data")
+                    return data
+                else:
+                    _LOGGER.error("Could not fetch consumption")
+                    return None

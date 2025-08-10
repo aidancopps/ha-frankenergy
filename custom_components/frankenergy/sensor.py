@@ -40,6 +40,7 @@ class FrankEnergyUsageSensor(SensorEntity):
 
     def __init__(self, name, api):
         """Initialize Frank Energy Usage sensor."""
+        self.hass = None
         self._name = name
         self._icon = "mdi:meter-electric"
         self._state = None
@@ -50,7 +51,6 @@ class FrankEnergyUsageSensor(SensorEntity):
         self._last_reset = None
         self._state_attributes = {}
         self._api = api
-        self._icon = "mdi:meter-electric"
         self._consumption_sensor_id = f"{DOMAIN}:energy_consumption_daily"
         self._consumption_sensor_name = "Daily energy consumption"
         self._cost_sensor_id = f"{DOMAIN}:energy_cost_daily"
@@ -108,11 +108,17 @@ class FrankEnergyUsageSensor(SensorEntity):
         if not response:
             _LOGGER.warning("No sensor data available, skipping processing")
             return
+        if not isinstance(response, dict):
+            _LOGGER.error(f"Unexpected response type: {type(response)}")
+            return
         await self.process_data(response)
 
     async def process_data(self, data):
-        """Process the hourly energy data."""
+        """Process the usage data and update statistics."""
         usageData = data.get('usage', [])
+        if not isinstance(usageData, list):
+            _LOGGER.error(f"Invalid usage data type: {type(usageData)}")
+            return
         if not usageData:
             _LOGGER.warning("No usage data available, skipping processing")
             return
@@ -123,39 +129,36 @@ class FrankEnergyUsageSensor(SensorEntity):
 
         cost_statistics = []
         kw_statistics = []
-        first_start_date = datetime.fromisoformat(
-            usageData[0]['startDate']).astimezone(pytz.utc)
 
-        # Since last_reset doesn't seem to work, fetch the previous sum total to continue from
+        try:
+            first_start_date = datetime.fromisoformat(usageData[0]['startDate']).astimezone(pytz.utc)
+        except Exception as e:
+            _LOGGER.error(f"Error parsing first startDate: {e}")
+            return
+
+        # Fetch previous sum totals to continue from
         previous_consumption_sensor_data = await get_instance(self.hass).async_add_executor_job(
-            get_last_statistics, self.hass, 200, self._consumption_sensor_id, True, {
-                "sum"}
+            get_last_statistics, self.hass, 200, self._consumption_sensor_id, True, {"sum"}
         )
-        previous_consumption_stats = previous_consumption_sensor_data.get(
-            self._consumption_sensor_id, [])
+        previous_consumption_stats = previous_consumption_sensor_data.get(self._consumption_sensor_id, [])
 
         previous_cost_stats_sensor_data = await get_instance(self.hass).async_add_executor_job(
-            get_last_statistics, self.hass, 200, self._cost_sensor_id, True, {
-                "sum"}
+            get_last_statistics, self.hass, 200, self._cost_sensor_id, True, {"sum"}
         )
-        previous_cost_stats = previous_cost_stats_sensor_data.get(
-            self._cost_sensor_id, [])
+        previous_cost_stats = previous_cost_stats_sensor_data.get(self._cost_sensor_id, [])
 
         for stat in previous_consumption_stats:
-            statStartDate = datetime.fromtimestamp(
-                stat['start']).astimezone(pytz.utc)
+            statStartDate = datetime.fromtimestamp(stat['start']).astimezone(pytz.utc)
             if statStartDate < first_start_date and stat["sum"] is not None:
                 running_sum_kw = stat["sum"]
                 break
         for stat in previous_cost_stats:
-            statStartDate = datetime.fromtimestamp(
-                stat['start']).astimezone(pytz.utc)
+            statStartDate = datetime.fromtimestamp(stat['start']).astimezone(pytz.utc)
             if statStartDate < first_start_date and stat["sum"] is not None:
                 running_sum_costNZD = stat["sum"]
                 break
 
-        _LOGGER.debug(f"previous running sum for consumption: {
-                      running_sum_kw}")
+        _LOGGER.debug(f"previous running sum for consumption: {running_sum_kw}")
         _LOGGER.debug(f"previous running sum for cost: {running_sum_costNZD}")
 
         for entry in usageData:
@@ -184,11 +187,9 @@ class FrankEnergyUsageSensor(SensorEntity):
                 unit_of_measurement=self._unit_of_measurement,
             )
             _LOGGER.debug(f"kw statistics: {kw_statistics}")
-            async_add_external_statistics(
-                self.hass, kw_metadata, kw_statistics)
+            async_add_external_statistics(self.hass, kw_metadata, kw_statistics)
         else:
-            _LOGGER.warning(
-                "No daily energy consumption statistics found, skipping update")
+            _LOGGER.warning("No daily energy consumption statistics found, skipping update")
 
         if cost_statistics:
             cost_metadata = StatisticMetaData(
@@ -197,12 +198,9 @@ class FrankEnergyUsageSensor(SensorEntity):
                 name=self._cost_sensor_name,
                 source=DOMAIN,
                 statistic_id=self._cost_sensor_id,
-                unit_of_measurement="$",
+                unit_of_measurement=self._unit_of_measurement,
             )
-
             _LOGGER.debug(f"Cost statistics: {cost_statistics}")
-            async_add_external_statistics(
-                self.hass, cost_metadata, cost_statistics)
+            async_add_external_statistics(self.hass, cost_metadata, cost_statistics)
         else:
-            _LOGGER.warning(
-                "No daily energy cost statistics found, skipping update")
+            _LOGGER.warning("No daily energy cost statistics found, skipping update")
