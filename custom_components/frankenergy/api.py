@@ -222,13 +222,12 @@ class FrankEnergyApi:
         }
 
         jar = aiohttp.CookieJar(quote_cookie=False)
-        async with aiohttp.ClientSession(cookie_jar=jar) as session:
-            async with session.get(url, headers=headers, params=params) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    if not data:
-                        _LOGGER.warning("Fetched consumption successfully but there was no data")
-                    return data
-                else:
-                    _LOGGER.error("Could not fetch consumption")
-                    return None
+        async with aiohttp.ClientSession(cookie_jar=jar) as session, session.get(url, headers=headers, params=params) as response:
+            if response.status == 200:
+                data = await response.json()
+                if not data:
+                    _LOGGER.warning("Fetched consumption successfully but there was no data")
+                return data
+            else:
+                _LOGGER.error("Could not fetch consumption")
+                return None
