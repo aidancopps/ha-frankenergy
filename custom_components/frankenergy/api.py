@@ -215,10 +215,11 @@ class FrankEnergyApi:
         from_date = to_date - timedelta(days=4)  # fetch 4 days worth of data
 
         url = f"{
-            self._url_data_base}/v2/private/usage/electricity/aggregatedSiteUsage/hourly"
+            self._url_data_base}/v2/private/usage/electricity/site-usage"
         params = {
             'startDate': from_date.strftime("%Y-%m-%d"),
             'endDate': to_date.strftime("%Y-%m-%d"),
+            'intervalType': "HOURLY"
         }
 
         jar = aiohttp.CookieJar(quote_cookie=False)
